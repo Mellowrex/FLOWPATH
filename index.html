@@ -1,0 +1,1259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>FLOWPATH</title>
+
+  <!-- Fonts: brand + UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg0:#090a0e;
+      --bg1:#12141b;
+      --bg2:#191c26;
+
+      --card: rgba(255,255,255,0.08);
+      --stroke: rgba(255,255,255,0.16);
+
+      --text: rgba(255,255,255,0.94);
+      --muted: rgba(255,255,255,0.68);
+
+      --accent: rgba(255,255,255,0.96);
+
+      --shadow: 0 26px 88px rgba(0,0,0,0.55);
+      --shadow2: 0 18px 60px rgba(0,0,0,0.45);
+
+      --radius-xl: 18px;
+      --radius-lg: 14px;
+      --radius-md: 12px;
+
+      --ease: cubic-bezier(.2,.8,.2,1);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+
+    body{
+      margin:0;
+      color: var(--text);
+      font-family: "Space Grotesk", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      overflow:hidden;
+      touch-action: none;
+      user-select:none;
+
+      background:
+        radial-gradient(circle at 18% 12%, rgba(255,255,255,0.10), transparent 55%),
+        radial-gradient(circle at 84% 82%, rgba(255,255,255,0.07), transparent 62%),
+        linear-gradient(180deg, var(--bg0), var(--bg1) 55%, var(--bg2));
+    }
+
+    .wrap{
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 16px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+
+    .frame{
+      width:min(1100px, 100%);
+      height:min(780px, 100%);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--stroke);
+      background: rgba(255,255,255,0.04);
+      box-shadow: var(--shadow), inset 0 0 0 1px rgba(255,255,255,0.04);
+      backdrop-filter: blur(14px);
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      position:relative;
+    }
+
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width: 0;
+    }
+    .brand h1{
+      margin:0;
+      font-size: 14px;
+      letter-spacing: 1.4px;
+      font-weight: 900;
+      white-space:nowrap;
+      font-family: "Unbounded", system-ui, sans-serif;
+    }
+
+    .hud{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap: wrap;
+      justify-content:flex-end;
+    }
+
+    .pill{
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      font-size: 12px;
+      color: rgba(255,255,255,0.82);
+      display:flex;
+      gap:8px;
+      align-items:center;
+      white-space:nowrap;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+    }
+    .pill b{ color: rgba(255,255,255,0.96); font-weight: 900; }
+
+    .btn{
+      padding: 9px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.92);
+      font-weight: 900;
+      cursor:pointer;
+      transition: transform .10s var(--ease), background .14s var(--ease), box-shadow .14s var(--ease);
+      white-space:nowrap;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+      font-family: "Space Grotesk", system-ui, sans-serif;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.11);
+      box-shadow: 0 16px 32px rgba(0,0,0,0.22);
+    }
+    .btn:active{ transform: translateY(0); }
+
+    .btn.primary{
+      background: rgba(255,255,255,0.14);
+      border-color: rgba(255,255,255,0.24);
+    }
+
+    .stage{
+      flex:1;
+      position:relative;
+      display:grid;
+      place-items:center;
+      padding: 12px;
+    }
+
+    canvas{
+      width: 100%;
+      height: 100%;
+      border-radius: var(--radius-lg);
+      background:
+        radial-gradient(circle at 28% 26%, rgba(255,255,255,0.10), transparent 42%),
+        radial-gradient(circle at 70% 72%, rgba(255,255,255,0.06), transparent 50%),
+        rgba(0,0,0,0.20);
+      border: 1px solid rgba(255,255,255,0.12);
+      display:block;
+      touch-action:none;
+      box-shadow: 0 18px 55px rgba(0,0,0,0.28);
+    }
+
+    .overlay{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      background: rgba(0,0,0,0.36);
+      backdrop-filter: blur(14px);
+      padding: 18px;
+    }
+
+    .card{
+      width: min(580px, 92vw);
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.08);
+      box-shadow: var(--shadow2);
+      padding: 16px;
+    }
+
+    .card h2{
+      margin: 0 0 8px;
+      font-size: 18px;
+      letter-spacing: 0.3px;
+      font-weight: 900;
+      font-family: "Unbounded", system-ui, sans-serif;
+      text-align:center;
+    }
+    .card p{
+      margin: 0 0 12px;
+      color: rgba(255,255,255,0.72);
+      line-height: 1.55;
+      font-size: 13px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .small{
+      font-size: 12px;
+      color: rgba(255,255,255,0.66);
+      line-height: 1.6;
+      margin-top: 10px;
+    }
+
+    .kbd{
+      display:inline-block;
+      padding: 2px 6px;
+      border-radius: 9px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      font-size: 12px;
+      color: rgba(255,255,255,0.88);
+      transform: translateY(-1px);
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      font-weight: 700;
+    }
+
+    .toast{
+      position:absolute;
+      left: 14px;
+      bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px);
+      color: rgba(255,255,255,0.86);
+      font-size: 12px;
+      opacity:0;
+      transform: translateY(8px);
+      transition: opacity .18s var(--ease), transform .18s var(--ease);
+      pointer-events:none;
+      max-width: min(560px, 92vw);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.28);
+    }
+    .toast.show{ opacity:1; transform: translateY(0); }
+
+    @media (max-width: 520px) and (orientation: portrait){
+      .wrap{ padding: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+      .frame{ height: calc(100vh - 20px - env(safe-area-inset-bottom)); border-radius: 16px; }
+      .top{ padding: 10px 10px; }
+      .brand h1{ font-size: 13px; }
+      .pill{ font-size: 11px; padding: 7px 9px; }
+      .btn{ padding: 8px 10px; border-radius: 12px; font-size: 12px; }
+      .grid{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="frame">
+      <div class="top">
+        <div class="brand">
+          <h1 id="brandTitle">FLOWPATH</h1>
+        </div>
+
+        <div class="hud">
+          <div class="pill"><span id="lblTime">Time</span> <b id="uiTime">0.00</b></div>
+          <div class="pill"><span id="lblLeft">Left</span> <b id="uiLeft">0</b></div>
+          <div class="pill"><span id="lblCombo">Combo</span> <b id="uiCombo">0</b></div>
+          <div class="pill"><span id="lblBest">Best</span> <b id="uiBest">0</b></div>
+
+          <button class="btn" id="btnLang" type="button">RU</button>
+          <button class="btn" id="btnPause" type="button">Pause</button>
+          <button class="btn primary" id="btnRestart" type="button">Restart</button>
+        </div>
+      </div>
+
+      <div class="stage">
+        <canvas id="c"></canvas>
+
+        <div class="overlay" id="menu">
+          <div class="card">
+            <h2 id="menuTitle">FLOWPATH</h2>
+            <p id="menuDesc"></p>
+            <div class="grid">
+              <button class="btn primary" id="btnStart" type="button">Start</button>
+              <button class="btn" id="btnMode" type="button">Mode: Calm</button>
+            </div>
+            <div class="small" id="menuHowto"></div>
+          </div>
+        </div>
+
+        <div class="overlay" id="pause" style="display:none;">
+          <div class="card">
+            <h2 id="pauseTitle">Paused</h2>
+            <p id="pauseDesc"></p>
+            <div class="grid">
+              <button class="btn primary" id="btnResume" type="button">Resume</button>
+              <button class="btn" id="btnPauseRestart" type="button">Restart</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="toast" id="toast"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // FLOWPATH — single file game: animated field + RU/EN + ASMR pop
+
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d", { alpha: true });
+
+    // UI
+    const brandTitle = document.getElementById("brandTitle");
+    const uiTime = document.getElementById("uiTime");
+    const uiLeft = document.getElementById("uiLeft");
+    const uiCombo = document.getElementById("uiCombo");
+    const uiBest = document.getElementById("uiBest");
+
+    const lblTime = document.getElementById("lblTime");
+    const lblLeft = document.getElementById("lblLeft");
+    const lblCombo = document.getElementById("lblCombo");
+    const lblBest = document.getElementById("lblBest");
+
+    const menu = document.getElementById("menu");
+    const pauseOverlay = document.getElementById("pause");
+
+    const btnStart = document.getElementById("btnStart");
+    const btnMode = document.getElementById("btnMode");
+    const btnPause = document.getElementById("btnPause");
+    const btnRestart = document.getElementById("btnRestart");
+    const btnResume = document.getElementById("btnResume");
+    const btnPauseRestart = document.getElementById("btnPauseRestart");
+    const btnLang = document.getElementById("btnLang");
+
+    const menuTitle = document.getElementById("menuTitle");
+    const menuDesc = document.getElementById("menuDesc");
+    const menuHowto = document.getElementById("menuHowto");
+
+    const pauseTitle = document.getElementById("pauseTitle");
+    const pauseDesc = document.getElementById("pauseDesc");
+
+    const toast = document.getElementById("toast");
+
+    // i18n
+    const I18N = {
+      en: {
+        brand: "FLOWPATH",
+        time: "Time",
+        left: "Left",
+        combo: "Combo",
+        best: "Best",
+        pause: "Pause",
+        resume: "Resume",
+        restart: "Restart",
+        paused: "Paused",
+        pausedDesc: "Take a breath. Continue when you're ready.",
+        startBtn: "Start",
+        modeCalm: "Mode: Calm",
+        modeRush: "Mode: Rush",
+        menuTitle: "FLOWPATH",
+        menuDescHTML: `Hold the <b style="color:var(--accent)">START</b> node, then connect all nodes without releasing. Finish before time runs out.`,
+        howtoHTML:
+          `PC: hold mouse on <span class="kbd">START</span> and drag through nodes. <span class="kbd">R</span> restart, <span class="kbd">Space</span> pause.<br/>`+
+          `Mobile: press and hold <span class="kbd">START</span>, then slide your finger through nodes.`,
+        toastHold: "Hold START",
+        toastFlow: "Flow…",
+        toastRestarted: "Restarted",
+        toastModeChanged: "Mode changed",
+        wordsWin: ["Perfect", "Flow", "Connected", "Nice"],
+        wordsFail: ["Lost", "Broken", "Reset", "Try again"],
+        startLabel: "START"
+      },
+      ru: {
+        brand: "FLOWPATH",
+        time: "Время",
+        left: "Осталось",
+        combo: "Комбо",
+        best: "Рекорд",
+        pause: "Пауза",
+        resume: "Продолжить",
+        restart: "Рестарт",
+        paused: "Пауза",
+        pausedDesc: "Выдохни. Продолжай, когда будешь готов.",
+        startBtn: "Старт",
+        modeCalm: "Режим: Спокойный",
+        modeRush: "Режим: Рывок",
+        menuTitle: "FLOWPATH",
+        menuDescHTML: `Удерживай <b style="color:var(--accent)">СТАРТ</b>, затем проведи через все точки не отпуская. Успей до конца времени.`,
+        howtoHTML:
+          `ПК: зажми мышь на <span class="kbd">СТАРТ</span> и веди по точкам. <span class="kbd">R</span> рестарт, <span class="kbd">Space</span> пауза.<br/>`+
+          `Телефон: нажми и удерживай <span class="kbd">СТАРТ</span>, затем веди пальцем по точкам.`,
+        toastHold: "Удерживай СТАРТ",
+        toastFlow: "Поток…",
+        toastRestarted: "Перезапуск",
+        toastModeChanged: "Режим изменён",
+        wordsWin: ["Идеально", "Поток", "Соединено", "Красиво"],
+        wordsFail: ["Сбилось", "Разорвал", "Слишком рано", "Ещё раз"],
+        startLabel: "СТАРТ"
+      }
+    };
+
+    const LS_LANG = "flowpath_lang_v2";
+    let lang = (localStorage.getItem(LS_LANG) || "").toLowerCase();
+    if(lang !== "ru" && lang !== "en") lang = "en";
+    const L = ()=> I18N[lang];
+
+    // Modes
+    const MODES = [
+      { key:"calm", label:{en:"Mode: Calm", ru:"Режим: Спокойный"}, nodesMin:6, nodesMax:10, timeBase:5.2, timePerNode:0.22, radius:18, magnet:18 },
+      { key:"rush", label:{en:"Mode: Rush", ru:"Режим: Рывок"}, nodesMin:8, nodesMax:13, timeBase:4.6, timePerNode:0.18, radius:16, magnet:14 }
+    ];
+    let modeIndex = 0;
+
+    function applyLanguage(){
+      const T = L();
+      document.documentElement.lang = lang;
+
+      brandTitle.textContent = T.brand;
+
+      lblTime.textContent = T.time;
+      lblLeft.textContent = T.left;
+      lblCombo.textContent = T.combo;
+      lblBest.textContent = T.best;
+
+      btnPause.textContent = T.pause;
+      btnRestart.textContent = T.restart;
+      btnResume.textContent = T.resume;
+      btnPauseRestart.textContent = T.restart;
+
+      pauseTitle.textContent = T.paused;
+      pauseDesc.textContent = T.pausedDesc;
+
+      btnStart.textContent = T.startBtn;
+      btnMode.textContent = MODES[modeIndex].label[lang];
+
+      menuTitle.textContent = T.menuTitle;
+      menuDesc.innerHTML = T.menuDescHTML;
+      menuHowto.innerHTML = T.howtoHTML;
+
+      btnLang.textContent = (lang === "en") ? "RU" : "EN";
+    }
+
+    // State
+    const state = {
+      running:false, paused:false,
+      nodes:[], startIndex:0, remaining:0,
+      timer:0, timerMax:0,
+      holding:false, pointerId:null,
+      px:0, py:0,
+      trail:[],
+      score:0, combo:0, best:0,
+      lastTick: performance.now(),
+      vw:0, vh:0,
+
+      // animated field
+      bgT:0,
+      particles:[],
+      shimmer:0
+    };
+
+    const LS_BEST = "flowpath_best_v2";
+    state.best = parseInt(localStorage.getItem(LS_BEST) || "0", 10) || 0;
+    uiBest.textContent = String(state.best);
+
+    // Helpers
+    const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+    const rand = (a,b)=>a+Math.random()*(b-a);
+    const randi = (a,b)=>Math.floor(rand(a,b+1));
+    const dist2 = (ax,ay,bx,by)=>{ const dx=ax-bx, dy=ay-by; return dx*dx+dy*dy; };
+
+    function showToast(text){
+      toast.textContent = text;
+      toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(()=>toast.classList.remove("show"), 900);
+    }
+
+    function microFlash(){
+      try{
+        document.body.animate(
+          [{ opacity: 1 }, { opacity: 0.985 }, { opacity: 1 }],
+          { duration: 110, easing: "ease-out" }
+        );
+      } catch {}
+    }
+    const pickWord = (arr)=>arr[Math.floor(Math.random()*arr.length)];
+
+    // Audio (juicy pop)
+    const Sound = {
+      ctx:null, master:null, comp:null, delay:null, fb:null, wet:null,
+      masterVol: 0.23,
+
+      ensure(){
+        if(!this.ctx){
+          const AC = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AC();
+
+          this.master = this.ctx.createGain();
+          this.master.gain.value = this.masterVol;
+
+          this.comp = this.ctx.createDynamicsCompressor();
+          this.comp.threshold.value = -24;
+          this.comp.knee.value = 18;
+          this.comp.ratio.value = 6;
+          this.comp.attack.value = 0.003;
+          this.comp.release.value = 0.12;
+
+          // small “air” delay
+          this.delay = this.ctx.createDelay(0.25);
+          this.delay.delayTime.value = 0.055;
+          this.fb = this.ctx.createGain();
+          this.fb.gain.value = 0.18;
+          this.wet = this.ctx.createGain();
+          this.wet.gain.value = 0.18;
+
+          this.delay.connect(this.fb);
+          this.fb.connect(this.delay);
+
+          this.comp.connect(this.master);
+          this.comp.connect(this.delay);
+          this.delay.connect(this.wet);
+          this.wet.connect(this.master);
+
+          this.master.connect(this.ctx.destination);
+        }
+        if(this.ctx.state === "suspended") this.ctx.resume().catch(()=>{});
+      },
+
+      _panner(pan){
+        const p = this.ctx.createStereoPanner();
+        p.pan.value = pan;
+        return p;
+      },
+
+      tone(freq, type, dur, vol=0.14, slideTo=null, pan=0){
+        if(!this.ctx) return;
+        const t0 = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const panNode = this._panner(pan);
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t0);
+        if(slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+
+        gain.gain.setValueAtTime(Math.max(0.0001, vol), t0);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+        osc.connect(gain);
+        gain.connect(panNode);
+        panNode.connect(this.comp);
+
+        osc.start(t0);
+        osc.stop(t0 + dur);
+      },
+
+      pop(strength=1, pan=0){
+        if(!this.ctx) return;
+        const t0 = this.ctx.currentTime;
+
+        const r1 = (Math.random()*2-1) * 0.10;
+        const r2 = (Math.random()*2-1) * 0.12;
+        const sp = clamp(pan + (Math.random()*2-1)*0.15, -1, 1);
+
+        const panNode = this._panner(sp);
+
+        // noise burst
+        const len = Math.floor(this.ctx.sampleRate * 0.055);
+        const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for(let i=0;i<len;i++){
+          const x = (Math.random()*2 - 1);
+          data[i] = x * (1 - i/len);
+        }
+        const src = this.ctx.createBufferSource();
+        src.buffer = buf;
+
+        const hp = this.ctx.createBiquadFilter();
+        hp.type = "highpass";
+        hp.frequency.value = 650 * (1 + r1);
+
+        const bp = this.ctx.createBiquadFilter();
+        bp.type = "bandpass";
+        bp.frequency.value = 1800 * (1 + r2);
+        bp.Q.value = 6.5;
+
+        const lp = this.ctx.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.value = 6400;
+
+        const ng = this.ctx.createGain();
+        ng.gain.setValueAtTime(0.80 * strength, t0);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.075);
+
+        src.connect(hp);
+        hp.connect(bp);
+        bp.connect(lp);
+        lp.connect(ng);
+        ng.connect(panNode);
+        panNode.connect(this.comp);
+
+        // body thump
+        const oscL = this.ctx.createOscillator();
+        const gL = this.ctx.createGain();
+        oscL.type = "sine";
+        oscL.frequency.setValueAtTime(120 * (1 + r1*0.8), t0);
+        oscL.frequency.exponentialRampToValueAtTime(70, t0 + 0.08);
+        gL.gain.setValueAtTime(0.11 * strength, t0);
+        gL.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.09);
+        oscL.connect(gL);
+        gL.connect(panNode);
+
+        // click core
+        const osc = this.ctx.createOscillator();
+        const og = this.ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(520 * (1 + r2*0.3), t0);
+        osc.frequency.exponentialRampToValueAtTime(260, t0 + 0.06);
+        og.gain.setValueAtTime(0.22 * strength, t0);
+        og.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.065);
+        osc.connect(og);
+        og.connect(panNode);
+
+        src.start(t0); src.stop(t0 + 0.085);
+        osc.start(t0); osc.stop(t0 + 0.085);
+        oscL.start(t0); oscL.stop(t0 + 0.095);
+      },
+
+      click(pan=0){ this.tone(520, "triangle", 0.055, 0.18, 820, pan); },
+      start(pan=0){ this.tone(220, "sine", 0.12, 0.20, 320, pan); },
+      hit(pan=0){ this.pop(1.0, pan); },
+      fail(pan=0){ this.tone(220, "sawtooth", 0.18, 0.22, 85, pan); },
+      win(){
+        this.tone(520, "sine", 0.09, 0.18, 820, -0.15);
+        setTimeout(()=>this.tone(820, "sine", 0.11, 0.18, 1100, 0.15), 90);
+      }
+    };
+
+    // Animated field
+    function initParticles(){
+      const base = Math.round(clamp((state.vw * state.vh) / 18000, 26, 70));
+      state.particles = [];
+      for(let i=0;i<base;i++){
+        const sp = rand(6,16);
+        state.particles.push({
+          x: Math.random()*state.vw,
+          y: Math.random()*state.vh,
+          r: rand(0.6,1.9),
+          a: rand(0.05,0.13),
+          vx: (Math.random()*2-1)*sp,
+          vy: (Math.random()*2-1)*sp,
+          tw: Math.random()*10
+        });
+      }
+    }
+
+    function updateParticles(dt){
+      for(const p of state.particles){
+        p.tw += dt*1.2;
+        p.x += p.vx*dt;
+        p.y += p.vy*dt;
+        p.x += Math.sin(p.tw)*dt*2.0;
+        p.y += Math.cos(p.tw*0.9)*dt*2.0;
+
+        if(p.x < -12) p.x = state.vw + 12;
+        if(p.x > state.vw + 12) p.x = -12;
+        if(p.y < -12) p.y = state.vh + 12;
+        if(p.y > state.vh + 12) p.y = -12;
+      }
+    }
+
+    function drawParticles(){
+      if(!state.particles.length) return;
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      const boost = state.holding ? 1.25 : 1.0;
+      for(const p of state.particles){
+        const alpha = p.a * boost * (0.75 + 0.25*Math.sin(p.tw*1.6));
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = "rgba(255,255,255,1)";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawBreathingBlobs(){
+      const w = state.vw, h = state.vh;
+      const time = state.bgT;
+      const life = state.holding ? 1.0 : 0.65;
+
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      ctx.globalAlpha = 0.10 * life;
+
+      // blob A
+      let gx = w*(0.22 + 0.07*Math.sin(time*0.35));
+      let gy = h*(0.32 + 0.08*Math.cos(time*0.28));
+      let g1 = ctx.createRadialGradient(gx, gy, 10, gx, gy, Math.min(w,h)*0.60);
+      g1.addColorStop(0, "rgba(255,255,255,0.22)");
+      g1.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = g1;
+      ctx.fillRect(0,0,w,h);
+
+      // blob B
+      gx = w*(0.78 + 0.06*Math.cos(time*0.31));
+      gy = h*(0.72 + 0.07*Math.sin(time*0.26));
+      let g2 = ctx.createRadialGradient(gx, gy, 10, gx, gy, Math.min(w,h)*0.65);
+      g2.addColorStop(0, "rgba(255,255,255,0.16)");
+      g2.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = g2;
+      ctx.fillRect(0,0,w,h);
+
+      // cursor bloom (holding)
+      if(state.holding){
+        ctx.globalAlpha = 0.12;
+        const g3 = ctx.createRadialGradient(state.px, state.py, 10, state.px, state.py, Math.min(w,h)*0.40);
+        g3.addColorStop(0, "rgba(255,255,255,0.22)");
+        g3.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = g3;
+        ctx.fillRect(0,0,w,h);
+      }
+
+      ctx.restore();
+    }
+
+    // Layout / resize
+    function resize(){
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+      canvas.width = Math.floor(rect.width * dpr);
+      canvas.height = Math.floor(rect.height * dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+
+      state.vw = rect.width;
+      state.vh = rect.height;
+
+      initParticles();
+    }
+    window.addEventListener("resize", resize);
+
+    // Round generation
+    function newRound(){
+      const m = MODES[modeIndex];
+      const count = randi(m.nodesMin, m.nodesMax);
+
+      const pad = 60;
+      const w = state.vw, h = state.vh;
+
+      const isMobilePortrait = window.matchMedia("(max-width: 520px) and (orientation: portrait)").matches;
+      const usableH = isMobilePortrait ? h * 0.75 : h;
+
+      const nodes = [];
+      const minDist = 72;
+
+      for(let i=0; i<count; i++){
+        let tries = 0, x, y, ok=false;
+        while(tries++ < 220 && !ok){
+          x = rand(pad, w - pad);
+          y = rand(pad, usableH - pad);
+          ok = true;
+          for(const n of nodes){
+            if(dist2(x,y,n.x,n.y) < minDist*minDist){ ok=false; break; }
+          }
+        }
+        nodes.push({ x, y, hit:false, t:0, isStart:false, pulse:Math.random()*10 });
+      }
+
+      state.startIndex = randi(0, nodes.length - 1);
+      nodes[state.startIndex].isStart = true;
+
+      state.nodes = nodes;
+      state.remaining = nodes.length - 1;
+      state.trail = [];
+      state.timerMax = m.timeBase + nodes.length * m.timePerNode;
+      state.timer = state.timerMax;
+
+      uiLeft.textContent = String(state.remaining);
+      uiTime.textContent = state.timer.toFixed(2);
+    }
+
+    // Flow
+    function startGame(){
+      Sound.ensure();
+      Sound.start(0);
+
+      state.running = true;
+      state.paused = false;
+      state.holding = false;
+      state.pointerId = null;
+      state.combo = 0;
+      state.score = 0;
+      uiCombo.textContent = "0";
+      menu.style.display = "none";
+      pauseOverlay.style.display = "none";
+
+      newRound();
+      showToast(L().toastHold);
+    }
+
+    function togglePause(){
+      if(!state.running) return;
+      state.paused = !state.paused;
+      pauseOverlay.style.display = state.paused ? "grid" : "none";
+      state.lastTick = performance.now();
+    }
+
+    function restart(){
+      Sound.ensure();
+      Sound.click(0);
+      if(!state.running){ startGame(); return; }
+      state.holding = false;
+      state.pointerId = null;
+      state.combo = 0;
+      uiCombo.textContent = "0";
+      newRound();
+      showToast(L().toastRestarted);
+    }
+
+    function endRound(success){
+      state.holding = false;
+      state.pointerId = null;
+
+      if(success){
+        Sound.win();
+        state.combo += 1;
+        uiCombo.textContent = String(state.combo);
+
+        const gained = state.nodes.length * (1 + Math.floor(state.combo/3));
+        state.score += gained;
+
+        if(state.score > state.best){
+          state.best = state.score;
+          localStorage.setItem(LS_BEST, String(state.best));
+          uiBest.textContent = String(state.best);
+        }
+
+        microFlash();
+        showToast(pickWord(L().wordsWin));
+        newRound();
+      } else {
+        Sound.fail(0);
+        state.combo = 0;
+        uiCombo.textContent = "0";
+        showToast(pickWord(L().wordsFail));
+        newRound();
+      }
+    }
+
+    // Input
+    function getPos(e){
+      const rect = canvas.getBoundingClientRect();
+      return { x: (e.clientX - rect.left), y: (e.clientY - rect.top) };
+    }
+
+    function panFromX(x){
+      const t01 = clamp(x / Math.max(1, state.vw), 0, 1);
+      return (t01 - 0.5) * 0.70;
+    }
+
+    function tryHitNodes(x,y){
+      const m = MODES[modeIndex];
+      const r = m.radius + m.magnet;
+
+      for(const n of state.nodes){
+        if(n.isStart || n.hit) continue;
+        if(dist2(x,y,n.x,n.y) <= r*r){
+          n.hit = true;
+          n.t = 1.0;
+          state.remaining -= 1;
+          uiLeft.textContent = String(state.remaining);
+
+          Sound.hit(panFromX(n.x));
+          state.shimmer = 1.0;
+          microFlash();
+          if(navigator.vibrate) navigator.vibrate(10);
+
+          if(state.remaining <= 0) endRound(true);
+          return;
+        }
+      }
+    }
+
+    canvas.addEventListener("pointerdown", (e)=>{
+      if(!state.running || state.paused) return;
+      Sound.ensure();
+
+      const {x,y} = getPos(e);
+      state.px = x; state.py = y;
+
+      const start = state.nodes[state.startIndex];
+      const m = MODES[modeIndex];
+      const rr = (m.radius + 7);
+
+      if(dist2(x,y,start.x,start.y) <= rr*rr){
+        state.holding = true;
+        state.pointerId = e.pointerId;
+        canvas.setPointerCapture(e.pointerId);
+
+        for(const n of state.nodes){
+          if(!n.isStart) n.hit = false;
+          n.t = 0;
+        }
+
+        state.remaining = state.nodes.length - 1;
+        uiLeft.textContent = String(state.remaining);
+
+        state.trail = [{x,y,t:1}];
+        showToast(L().toastFlow);
+
+        Sound.click(panFromX(start.x));
+      } else {
+        showToast(L().toastHold);
+      }
+    });
+
+    canvas.addEventListener("pointermove", (e)=>{
+      if(!state.running || state.paused) return;
+      const {x,y} = getPos(e);
+      state.px = x; state.py = y;
+
+      if(state.holding && state.pointerId === e.pointerId){
+        state.trail.push({x,y,t:1});
+        if(state.trail.length > 90) state.trail.shift();
+        tryHitNodes(x,y);
+      }
+    });
+
+    function releasePointer(e){
+      if(!state.running) return;
+      if(state.pointerId !== null && e.pointerId !== state.pointerId) return;
+
+      if(state.holding && state.remaining > 0) endRound(false);
+      state.holding = false;
+      state.pointerId = null;
+    }
+
+    canvas.addEventListener("pointerup", releasePointer);
+    canvas.addEventListener("pointercancel", releasePointer);
+    canvas.addEventListener("lostpointercapture", (e)=>{
+      if(state.pointerId === e.pointerId) releasePointer(e);
+    });
+
+    // Keyboard
+    window.addEventListener("keydown", (e)=>{
+      if(e.code === "Space"){
+        e.preventDefault();
+        if(menu.style.display !== "none") return;
+        togglePause();
+      }
+      if(e.code === "KeyR") restart();
+      if(e.code === "Escape"){
+        if(pauseOverlay.style.display !== "none") togglePause();
+      }
+    });
+
+    // Buttons
+    btnStart.addEventListener("click", startGame);
+    btnPause.addEventListener("click", togglePause);
+    btnRestart.addEventListener("click", restart);
+    btnResume.addEventListener("click", togglePause);
+    btnPauseRestart.addEventListener("click", restart);
+
+    btnMode.addEventListener("click", ()=>{
+      modeIndex = (modeIndex + 1) % MODES.length;
+      btnMode.textContent = MODES[modeIndex].label[lang];
+      Sound.ensure(); Sound.click(0);
+      if(state.running){
+        newRound();
+        showToast(L().toastModeChanged);
+      }
+    });
+
+    btnLang.addEventListener("click", ()=>{
+      lang = (lang === "en") ? "ru" : "en";
+      localStorage.setItem(LS_LANG, lang);
+      applyLanguage();
+      Sound.ensure(); Sound.click(0);
+    });
+
+    // Render
+    function roundRect(c, x, y, w, h, r){
+      const rr = Math.min(r, h/2, w/2);
+      c.beginPath();
+      c.moveTo(x+rr, y);
+      c.arcTo(x+w, y, x+w, y+h, rr);
+      c.arcTo(x+w, y+h, x, y+h, rr);
+      c.arcTo(x, y+h, x, y, rr);
+      c.arcTo(x, y, x+w, y, rr);
+      c.closePath();
+    }
+
+    function drawTimerBar(){
+      const w = state.vw;
+      const pad = 14;
+      const barW = Math.min(420, w - pad*2);
+      const x = pad, y = pad, hh = 10;
+
+      const t01 = clamp(state.timer / Math.max(0.0001, state.timerMax), 0, 1);
+
+      ctx.save();
+      ctx.globalAlpha = 0.72;
+
+      ctx.fillStyle = "rgba(255,255,255,0.10)";
+      ctx.strokeStyle = "rgba(255,255,255,0.16)";
+      ctx.lineWidth = 1;
+
+      roundRect(ctx, x, y, barW, hh, 999);
+      ctx.fill();
+      ctx.stroke();
+
+      const col = (t01 > 0.45) ? "rgba(255,255,255,0.92)" : (t01 > 0.20) ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.56)";
+      ctx.fillStyle = col;
+      roundRect(ctx, x, y, barW * t01, hh, 999);
+      ctx.fill();
+
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      roundRect(ctx, x, y, barW * t01, hh*0.45, 999);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawBackground(){
+      const w = state.vw, h = state.vh;
+
+      // grid
+      ctx.save();
+      ctx.globalAlpha = 0.10;
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(255,255,255,0.12)";
+      const step = 58;
+      for(let x=0; x<=w; x+=step){
+        ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
+      }
+      for(let y=0; y<=h; y+=step){
+        ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+      }
+      ctx.restore();
+
+      drawBreathingBlobs();
+      drawParticles();
+
+      // shimmer impulse
+      if(state.shimmer > 0.001){
+        ctx.save();
+        ctx.globalCompositeOperation = "screen";
+        ctx.globalAlpha = 0.10 * state.shimmer;
+        const g = ctx.createRadialGradient(state.px, state.py, 10, state.px, state.py, Math.min(w,h)*0.55);
+        g.addColorStop(0, "rgba(255,255,255,0.25)");
+        g.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0,0,w,h);
+        ctx.restore();
+      }
+
+      // vignette
+      ctx.save();
+      const vg = ctx.createRadialGradient(w*0.5, h*0.5, Math.min(w,h)*0.15, w*0.5, h*0.5, Math.max(w,h)*0.80);
+      vg.addColorStop(0, "rgba(255,255,255,0.02)");
+      vg.addColorStop(1, "rgba(0,0,0,0.28)");
+      ctx.fillStyle = vg;
+      ctx.fillRect(0,0,w,h);
+      ctx.restore();
+    }
+
+    function drawTrail(){
+      if(!state.trail.length) return;
+
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      ctx.globalAlpha = 0.20;
+      ctx.strokeStyle = "rgba(255,255,255,0.55)";
+      ctx.lineWidth = 14;
+      ctx.beginPath();
+      for(let i=0; i<state.trail.length; i++){
+        const p = state.trail[i];
+        if(i===0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.55;
+      ctx.strokeStyle = "rgba(255,255,255,0.85)";
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      for(let i=0; i<state.trail.length; i++){
+        const p = state.trail[i];
+        if(i===0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+
+      const last = state.trail[state.trail.length-1];
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = "rgba(255,255,255,0.98)";
+      ctx.beginPath();
+      ctx.arc(last.x, last.y, 6.5, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawNodes(dt){
+      const m = MODES[modeIndex];
+      const startLabel = L().startLabel;
+
+      for(const n of state.nodes){
+        n.pulse += dt * 2.2;
+        if(n.t > 0) n.t = Math.max(0, n.t - dt*2.6);
+
+        const baseR = m.radius;
+        const pulse = (Math.sin(n.pulse) * 0.5 + 0.5);
+        const r = baseR + (n.isStart ? 2 : 0) + pulse * 1.8;
+
+        ctx.save();
+
+        let stroke = "rgba(255,255,255,0.38)";
+        let fill   = "rgba(255,255,255,0.10)";
+        let textC  = "rgba(255,255,255,0.86)";
+
+        if(n.isStart){
+          stroke = "rgba(255,255,255,0.95)";
+          fill   = "rgba(255,255,255,0.16)";
+          textC  = "rgba(255,255,255,0.98)";
+        } else if(n.hit){
+          stroke = "rgba(255,255,255,0.92)";
+          fill   = "rgba(255,255,255,0.14)";
+          textC  = "rgba(255,255,255,0.98)";
+        }
+
+        // glow
+        ctx.globalAlpha = 0.14;
+        ctx.fillStyle = stroke;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r + 10, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        // ring
+        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = stroke;
+        ctx.fillStyle = fill;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r, 0, Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+
+        // hit pulse
+        if(n.t > 0){
+          ctx.globalAlpha = n.t * 0.60;
+          ctx.strokeStyle = "rgba(255,255,255,0.95)";
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, r + (1-n.t)*18, 0, Math.PI*2);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+
+        // START label (localized)
+        if(n.isStart){
+          ctx.font = '900 11px "Space Grotesk", system-ui, sans-serif';
+          ctx.fillStyle = textC;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(startLabel, n.x, n.y);
+        }
+
+        ctx.restore();
+      }
+
+      // target ring
+      if(state.holding){
+        ctx.save();
+        ctx.globalAlpha = 0.20;
+        ctx.strokeStyle = "rgba(255,255,255,0.75)";
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.arc(state.px, state.py, m.radius + m.magnet, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // Main loop
+    function tick(){
+      requestAnimationFrame(tick);
+
+      const now = performance.now();
+      const dt = Math.min(0.05, (now - state.lastTick) / 1000);
+      state.lastTick = now;
+
+      state.bgT += dt;
+      updateParticles(dt);
+      state.shimmer = Math.max(0, state.shimmer - dt * 2.2);
+
+      if(state.paused || !state.running){
+        ctx.clearRect(0,0,state.vw,state.vh);
+        drawBackground();
+        drawTimerBar();
+        drawTrail();
+        drawNodes(dt);
+        return;
+      }
+
+      state.timer -= dt;
+      if(state.timer < 0){
+        state.timer = 0;
+        endRound(false);
+      }
+
+      for(const p of state.trail) p.t -= dt * 1.65;
+      state.trail = state.trail.filter(p => p.t > 0);
+
+      uiTime.textContent = state.timer.toFixed(2);
+
+      ctx.clearRect(0,0,state.vw,state.vh);
+      drawBackground();
+      drawTimerBar();
+      drawTrail();
+      drawNodes(dt);
+    }
+
+    // Init
+    function init(){
+      resize();
+      applyLanguage();
+
+      menu.style.display = "grid";
+      uiTime.textContent = "0.00";
+      uiLeft.textContent = "0";
+      uiCombo.textContent = "0";
+    }
+
+    // ResizeObserver for crisp canvas
+    const ro = new ResizeObserver(()=>resize());
+    ro.observe(canvas);
+
+    init();
+    tick();
+  </script>
+</body>
+</html>
