@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>FLOWPATH</title>
 
-  <!-- Fonts: brand + UI -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
@@ -16,12 +15,9 @@
       --bg1:#12141b;
       --bg2:#191c26;
 
-      --card: rgba(255,255,255,0.08);
       --stroke: rgba(255,255,255,0.16);
 
       --text: rgba(255,255,255,0.94);
-      --muted: rgba(255,255,255,0.68);
-
       --accent: rgba(255,255,255,0.96);
 
       --shadow: 0 26px 88px rgba(0,0,0,0.55);
@@ -178,10 +174,12 @@
       background: rgba(0,0,0,0.36);
       backdrop-filter: blur(14px);
       padding: 18px;
+      padding-left: calc(18px + env(safe-area-inset-left));
+      padding-right: calc(18px + env(safe-area-inset-right));
     }
 
     .card{
-      width: min(580px, 92vw);
+      width: min(580px, 100%);  /* ✅ симметрия: всегда внутри оверлея */
       border-radius: var(--radius-xl);
       border: 1px solid rgba(255,255,255,0.16);
       background: rgba(255,255,255,0.08);
@@ -227,7 +225,6 @@
       font-size: 12px;
       color: rgba(255,255,255,0.88);
       transform: translateY(-1px);
-      font-family: "Space Grotesk", system-ui, sans-serif;
       font-weight: 700;
     }
 
@@ -251,7 +248,7 @@
     }
     .toast.show{ opacity:1; transform: translateY(0); }
 
-    /* ✅ MOBILE FIX: make header two-row, avoid overlaps */
+    /* ✅ MOBILE: two-row header, compact controls */
     @media (max-width: 520px) and (orientation: portrait){
       .wrap{ padding: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
       .frame{ height: calc(100vh - 20px - env(safe-area-inset-bottom)); border-radius: 16px; }
@@ -263,9 +260,7 @@
         padding: 10px 10px;
       }
 
-      .brand{
-        justify-content: center;
-      }
+      .brand{ justify-content: center; }
       .brand h1{ font-size: 13px; }
 
       .hud{
@@ -273,15 +268,13 @@
         gap: 6px;
       }
 
-      .pill{
-        font-size: 11px;
-        padding: 6px 8px;
-      }
+      .pill{ font-size: 11px; padding: 6px 8px; }
+      .btn{ padding: 7px 9px; font-size: 11px; border-radius: 12px; }
 
-      .btn{
-        padding: 7px 9px;
-        border-radius: 12px;
-        font-size: 11px;
+      .overlay{
+        padding: 14px;
+        padding-left: calc(14px + env(safe-area-inset-left));
+        padding-right: calc(14px + env(safe-area-inset-right));
       }
 
       .grid{ grid-template-columns: 1fr; }
@@ -341,12 +334,9 @@
   </div>
 
   <script>
-    // FLOWPATH — single file game: animated field + RU/EN + ASMR pop
-
     const canvas = document.getElementById("c");
     const ctx = canvas.getContext("2d", { alpha: true });
 
-    // UI
     const brandTitle = document.getElementById("brandTitle");
     const uiTime = document.getElementById("uiTime");
     const uiLeft = document.getElementById("uiLeft");
@@ -378,7 +368,6 @@
 
     const toast = document.getElementById("toast");
 
-    // i18n
     const I18N = {
       en: {
         brand: "FLOWPATH",
@@ -441,7 +430,6 @@
     if(lang !== "ru" && lang !== "en") lang = "en";
     const L = ()=> I18N[lang];
 
-    // Modes
     const MODES = [
       { key:"calm", label:{en:"Mode: Calm", ru:"Режим: Спокойный"}, nodesMin:6, nodesMax:10, timeBase:5.2, timePerNode:0.22, radius:18, magnet:18 },
       { key:"rush", label:{en:"Mode: Rush", ru:"Режим: Рывок"}, nodesMin:8, nodesMax:13, timeBase:4.6, timePerNode:0.18, radius:16, magnet:14 }
@@ -477,7 +465,6 @@
       btnLang.textContent = (lang === "en") ? "RU" : "EN";
     }
 
-    // State
     const state = {
       running:false, paused:false,
       nodes:[], startIndex:0, remaining:0,
@@ -488,8 +475,6 @@
       score:0, combo:0, best:0,
       lastTick: performance.now(),
       vw:0, vh:0,
-
-      // animated field
       bgT:0,
       particles:[],
       shimmer:0
@@ -499,7 +484,6 @@
     state.best = parseInt(localStorage.getItem(LS_BEST) || "0", 10) || 0;
     uiBest.textContent = String(state.best);
 
-    // Helpers
     const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
     const rand = (a,b)=>a+Math.random()*(b-a);
     const randi = (a,b)=>Math.floor(rand(a,b+1));
@@ -522,7 +506,6 @@
     }
     const pickWord = (arr)=>arr[Math.floor(Math.random()*arr.length)];
 
-    // Audio (juicy pop)
     const Sound = {
       ctx:null, master:null, comp:null, delay:null, fb:null, wet:null,
       masterVol: 0.23,
@@ -542,7 +525,6 @@
           this.comp.attack.value = 0.003;
           this.comp.release.value = 0.12;
 
-          // small “air” delay
           this.delay = this.ctx.createDelay(0.25);
           this.delay.delayTime.value = 0.055;
           this.fb = this.ctx.createGain();
@@ -599,10 +581,8 @@
         const r1 = (Math.random()*2-1) * 0.10;
         const r2 = (Math.random()*2-1) * 0.12;
         const sp = clamp(pan + (Math.random()*2-1)*0.15, -1, 1);
-
         const panNode = this._panner(sp);
 
-        // noise burst
         const len = Math.floor(this.ctx.sampleRate * 0.055);
         const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
         const data = buf.getChannelData(0);
@@ -637,7 +617,6 @@
         ng.connect(panNode);
         panNode.connect(this.comp);
 
-        // body thump
         const oscL = this.ctx.createOscillator();
         const gL = this.ctx.createGain();
         oscL.type = "sine";
@@ -648,7 +627,6 @@
         oscL.connect(gL);
         gL.connect(panNode);
 
-        // click core
         const osc = this.ctx.createOscillator();
         const og = this.ctx.createGain();
         osc.type = "sine";
@@ -674,10 +652,8 @@
       }
     };
 
-    // resume audio on first touch (mobile friendly)
     window.addEventListener("pointerdown", () => Sound.ensure(), { once: true });
 
-    // Animated field
     function initParticles(){
       const base = Math.round(clamp((state.vw * state.vh) / 18000, 26, 70));
       state.particles = [];
@@ -763,7 +739,6 @@
       ctx.restore();
     }
 
-    // Layout / resize
     function resize(){
       const rect = canvas.getBoundingClientRect();
       const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
@@ -773,12 +748,10 @@
 
       state.vw = rect.width;
       state.vh = rect.height;
-
       initParticles();
     }
     window.addEventListener("resize", resize);
 
-    // Round generation
     function newRound(){
       const m = MODES[modeIndex];
       const count = randi(m.nodesMin, m.nodesMax);
@@ -787,9 +760,14 @@
       const w = state.vw, h = state.vh;
 
       const isMobilePortrait = window.matchMedia("(max-width: 520px) and (orientation: portrait)").matches;
-      const usableH = isMobilePortrait ? h * 0.75 : h;
 
-      const topOffset = isMobilePortrait ? 70 : pad; // ✅ keep nodes below header area on phones
+      /* ✅ ВАЖНО:
+         - Раньше usableH был h*0.75 → точки скучивались вверх и лезли к таймеру
+         - Теперь даём больше вертикали, чтобы точки “дышали” и уходили ниже */
+      const usableH = isMobilePortrait ? h * 0.92 : h;
+
+      /* ✅ таймер снова в самом верху canvas, поэтому держим безопасный верхний отступ */
+      const safeTop = isMobilePortrait ? 112 : pad;
 
       const nodes = [];
       const minDist = 72;
@@ -798,7 +776,7 @@
         let tries = 0, x, y, ok=false;
         while(tries++ < 220 && !ok){
           x = rand(pad, w - pad);
-          y = rand(topOffset, usableH - pad);
+          y = rand(safeTop, usableH - pad);
           ok = true;
           for(const n of nodes){
             if(dist2(x,y,n.x,n.y) < minDist*minDist){ ok=false; break; }
@@ -820,7 +798,6 @@
       uiTime.textContent = state.timer.toFixed(2);
     }
 
-    // Flow
     function startGame(){
       Sound.ensure();
       Sound.start(0);
@@ -888,7 +865,6 @@
       }
     }
 
-    // Input
     function getPos(e){
       const rect = canvas.getBoundingClientRect();
       return { x: (e.clientX - rect.left), y: (e.clientY - rect.top) };
@@ -982,7 +958,6 @@
       if(state.pointerId === e.pointerId) releasePointer(e);
     });
 
-    // Keyboard
     window.addEventListener("keydown", (e)=>{
       if(e.code === "Space"){
         e.preventDefault();
@@ -995,7 +970,6 @@
       }
     });
 
-    // Buttons
     btnStart.addEventListener("click", startGame);
     btnPause.addEventListener("click", togglePause);
     btnRestart.addEventListener("click", restart);
@@ -1019,7 +993,6 @@
       Sound.ensure(); Sound.click(0);
     });
 
-    // Render
     function roundRect(c, x, y, w, h, r){
       const rr = Math.min(r, h/2, w/2);
       c.beginPath();
@@ -1036,10 +1009,9 @@
       const pad = 14;
       const barW = Math.min(420, w - pad*2);
       const hh = 10;
-      const x = pad;
 
-      const isMobilePortrait = window.matchMedia("(max-width: 520px) and (orientation: portrait)").matches;
-      const y = isMobilePortrait ? 38 : pad; // ✅ lower on phone
+      const x = pad;
+      const y = pad; // ✅ как раньше: полоса упирается в верх canvas
 
       const t01 = clamp(state.timer / Math.max(0.0001, state.timerMax), 0, 1);
 
@@ -1070,7 +1042,6 @@
     function drawBackground(){
       const w = state.vw, h = state.vh;
 
-      // grid
       ctx.save();
       ctx.globalAlpha = 0.10;
       ctx.lineWidth = 1;
@@ -1087,7 +1058,6 @@
       drawBreathingBlobs();
       drawParticles();
 
-      // shimmer impulse
       if(state.shimmer > 0.001){
         ctx.save();
         ctx.globalCompositeOperation = "screen";
@@ -1100,7 +1070,6 @@
         ctx.restore();
       }
 
-      // vignette
       ctx.save();
       const vg = ctx.createRadialGradient(w*0.5, h*0.5, Math.min(w,h)*0.15, w*0.5, h*0.5, Math.max(w,h)*0.80);
       vg.addColorStop(0, "rgba(255,255,255,0.02)");
@@ -1177,7 +1146,6 @@
           textC  = "rgba(255,255,255,0.98)";
         }
 
-        // glow
         ctx.globalAlpha = 0.14;
         ctx.fillStyle = stroke;
         ctx.beginPath();
@@ -1185,7 +1153,6 @@
         ctx.fill();
         ctx.globalAlpha = 1;
 
-        // ring
         ctx.lineWidth = 1.6;
         ctx.strokeStyle = stroke;
         ctx.fillStyle = fill;
@@ -1194,7 +1161,6 @@
         ctx.fill();
         ctx.stroke();
 
-        // hit pulse
         if(n.t > 0){
           ctx.globalAlpha = n.t * 0.60;
           ctx.strokeStyle = "rgba(255,255,255,0.95)";
@@ -1205,7 +1171,6 @@
           ctx.globalAlpha = 1;
         }
 
-        // START label (localized)
         if(n.isStart){
           ctx.font = '900 11px "Space Grotesk", system-ui, sans-serif';
           ctx.fillStyle = textC;
@@ -1217,7 +1182,6 @@
         ctx.restore();
       }
 
-      // target ring
       if(state.holding){
         ctx.save();
         ctx.globalAlpha = 0.20;
@@ -1230,7 +1194,6 @@
       }
     }
 
-    // Main loop
     function tick(){
       requestAnimationFrame(tick);
 
@@ -1269,7 +1232,6 @@
       drawNodes(dt);
     }
 
-    // Init
     function init(){
       resize();
       applyLanguage();
@@ -1280,7 +1242,6 @@
       uiCombo.textContent = "0";
     }
 
-    // ResizeObserver for crisp canvas
     const ro = new ResizeObserver(()=>resize());
     ro.observe(canvas);
 
