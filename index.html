@@ -251,13 +251,39 @@
     }
     .toast.show{ opacity:1; transform: translateY(0); }
 
+    /* ✅ MOBILE FIX: make header two-row, avoid overlaps */
     @media (max-width: 520px) and (orientation: portrait){
       .wrap{ padding: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
       .frame{ height: calc(100vh - 20px - env(safe-area-inset-bottom)); border-radius: 16px; }
-      .top{ padding: 10px 10px; }
+
+      .top{
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 10px 10px;
+      }
+
+      .brand{
+        justify-content: center;
+      }
       .brand h1{ font-size: 13px; }
-      .pill{ font-size: 11px; padding: 7px 9px; }
-      .btn{ padding: 8px 10px; border-radius: 12px; font-size: 12px; }
+
+      .hud{
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .pill{
+        font-size: 11px;
+        padding: 6px 8px;
+      }
+
+      .btn{
+        padding: 7px 9px;
+        border-radius: 12px;
+        font-size: 11px;
+      }
+
       .grid{ grid-template-columns: 1fr; }
     }
   </style>
@@ -648,6 +674,9 @@
       }
     };
 
+    // resume audio on first touch (mobile friendly)
+    window.addEventListener("pointerdown", () => Sound.ensure(), { once: true });
+
     // Animated field
     function initParticles(){
       const base = Math.round(clamp((state.vw * state.vh) / 18000, 26, 70));
@@ -706,7 +735,6 @@
       ctx.globalCompositeOperation = "screen";
       ctx.globalAlpha = 0.10 * life;
 
-      // blob A
       let gx = w*(0.22 + 0.07*Math.sin(time*0.35));
       let gy = h*(0.32 + 0.08*Math.cos(time*0.28));
       let g1 = ctx.createRadialGradient(gx, gy, 10, gx, gy, Math.min(w,h)*0.60);
@@ -715,7 +743,6 @@
       ctx.fillStyle = g1;
       ctx.fillRect(0,0,w,h);
 
-      // blob B
       gx = w*(0.78 + 0.06*Math.cos(time*0.31));
       gy = h*(0.72 + 0.07*Math.sin(time*0.26));
       let g2 = ctx.createRadialGradient(gx, gy, 10, gx, gy, Math.min(w,h)*0.65);
@@ -724,7 +751,6 @@
       ctx.fillStyle = g2;
       ctx.fillRect(0,0,w,h);
 
-      // cursor bloom (holding)
       if(state.holding){
         ctx.globalAlpha = 0.12;
         const g3 = ctx.createRadialGradient(state.px, state.py, 10, state.px, state.py, Math.min(w,h)*0.40);
@@ -763,6 +789,8 @@
       const isMobilePortrait = window.matchMedia("(max-width: 520px) and (orientation: portrait)").matches;
       const usableH = isMobilePortrait ? h * 0.75 : h;
 
+      const topOffset = isMobilePortrait ? 70 : pad; // ✅ keep nodes below header area on phones
+
       const nodes = [];
       const minDist = 72;
 
@@ -770,7 +798,7 @@
         let tries = 0, x, y, ok=false;
         while(tries++ < 220 && !ok){
           x = rand(pad, w - pad);
-          y = rand(pad, usableH - pad);
+          y = rand(topOffset, usableH - pad);
           ok = true;
           for(const n of nodes){
             if(dist2(x,y,n.x,n.y) < minDist*minDist){ ok=false; break; }
@@ -1007,7 +1035,11 @@
       const w = state.vw;
       const pad = 14;
       const barW = Math.min(420, w - pad*2);
-      const x = pad, y = pad, hh = 10;
+      const hh = 10;
+      const x = pad;
+
+      const isMobilePortrait = window.matchMedia("(max-width: 520px) and (orientation: portrait)").matches;
+      const y = isMobilePortrait ? 38 : pad; // ✅ lower on phone
 
       const t01 = clamp(state.timer / Math.max(0.0001, state.timerMax), 0, 1);
 
