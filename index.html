@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>FLOWPATH</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,7 +31,9 @@
     }
 
     *{ box-sizing:border-box; }
-    html,body{ height:100%; }
+
+    html,body{ height:100%; overscroll-behavior:none; }
+
 
     body{
       margin:0;
@@ -41,6 +43,12 @@
       touch-action: none;
       user-select:none;
 
+      /* ✅ lock viewport (prevents address-bar/overscroll jitter on mobile) */
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: var(--app-height, 100%);
+
       background:
         radial-gradient(circle at 18% 12%, rgba(255,255,255,0.10), transparent 55%),
         radial-gradient(circle at 84% 82%, rgba(255,255,255,0.07), transparent 62%),
@@ -48,7 +56,7 @@
     }
 
     .wrap{
-      height:100%;
+      height: var(--app-height, 100%);
       display:flex;
       align-items:center;
       justify-content:center;
@@ -251,7 +259,7 @@
     /* ✅ MOBILE: two-row header, compact controls */
     @media (max-width: 520px) and (orientation: portrait){
       .wrap{ padding: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
-      .frame{ height: calc(100vh - 20px - env(safe-area-inset-bottom)); border-radius: 16px; }
+      .frame{ height: calc(var(--app-height, 100vh) - 20px - env(safe-area-inset-bottom)); border-radius: 16px; }
 
       .top{
         flex-direction: column;
@@ -739,18 +747,48 @@
       ctx.restore();
     }
 
+
+    // ✅ Mobile stability: lock a real app-height (prevents address bar resize jitter)
+    function setAppHeight(){
+      const h = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty("--app-height", Math.round(h) + "px");
+    }
+
+    // ✅ Throttled resize (avoid ResizeObserver micro-jitter)
+    let _resizeRAF = 0;
+    function scheduleResize(){
+      if(_resizeRAF) return;
+      _resizeRAF = requestAnimationFrame(()=>{
+        _resizeRAF = 0;
+        setAppHeight();
+        resize();
+      });
+    }
+
     function resize(){
       const rect = canvas.getBoundingClientRect();
+      state._rect = rect; // cache for input mapping
+
       const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
       canvas.width = Math.floor(rect.width * dpr);
       canvas.height = Math.floor(rect.height * dpr);
+
+      // draw in CSS pixels
       ctx.setTransform(dpr,0,0,dpr,0,0);
 
       state.vw = rect.width;
       state.vh = rect.height;
       initParticles();
     }
-    window.addEventListener("resize", resize);
+
+    // Use scheduled resize (prevents jitter from rapid viewport changes)
+    window.addEventListener("resize", scheduleResize, { passive: true });
+    window.addEventListener("orientationchange", scheduleResize, { passive: true });
+
+    if(window.visualViewport){
+      window.visualViewport.addEventListener("resize", scheduleResize, { passive: true });
+      window.visualViewport.addEventListener("scroll", scheduleResize, { passive: true });
+    }
 
     function newRound(){
       const m = MODES[modeIndex];
@@ -866,7 +904,8 @@
     }
 
     function getPos(e){
-      const rect = canvas.getBoundingClientRect();
+      // cached rect from resize() (much smoother on mobile)
+      const rect = state._rect || canvas.getBoundingClientRect();
       return { x: (e.clientX - rect.left), y: (e.clientY - rect.top) };
     }
 
@@ -899,6 +938,7 @@
     }
 
     canvas.addEventListener("pointerdown", (e)=>{
+      e.preventDefault();
       if(!state.running || state.paused) return;
       Sound.ensure();
 
@@ -931,17 +971,24 @@
       }
     });
 
-    canvas.addEventListener("pointermove", (e)=>{
+    function onPointerMove(e){
       if(!state.running || state.paused) return;
+      if(!state.holding || state.pointerId !== e.pointerId) return;
+      e.preventDefault();
+
       const {x,y} = getPos(e);
       state.px = x; state.py = y;
 
-      if(state.holding && state.pointerId === e.pointerId){
-        state.trail.push({x,y,t:1});
-        if(state.trail.length > 90) state.trail.shift();
-        tryHitNodes(x,y);
-      }
-    });
+      state.trail.push({x,y,t:1});
+      if(state.trail.length > 90) state.trail.shift();
+      tryHitNodes(x,y);
+    }
+
+    // pointerrawupdate gives smoother high-frequency input on some devices
+    canvas.addEventListener("pointermove", onPointerMove, { passive:false });
+    if("onpointerrawupdate" in window){
+      canvas.addEventListener("pointerrawupdate", onPointerMove, { passive:false });
+    }
 
     function releasePointer(e){
       if(!state.running) return;
@@ -952,8 +999,8 @@
       state.pointerId = null;
     }
 
-    canvas.addEventListener("pointerup", releasePointer);
-    canvas.addEventListener("pointercancel", releasePointer);
+    canvas.addEventListener("pointerup", (e)=>{ e.preventDefault(); releasePointer(e); }, { passive:false });
+    canvas.addEventListener("pointercancel", (e)=>{ e.preventDefault(); releasePointer(e); }, { passive:false });
     canvas.addEventListener("lostpointercapture", (e)=>{
       if(state.pointerId === e.pointerId) releasePointer(e);
     });
@@ -1233,6 +1280,7 @@
     }
 
     function init(){
+      setAppHeight();
       resize();
       applyLanguage();
 
@@ -1242,11 +1290,10 @@
       uiCombo.textContent = "0";
     }
 
-    const ro = new ResizeObserver(()=>resize());
-    ro.observe(canvas);
-
     init();
+    scheduleResize();
     tick();
   </script>
 </body>
 </html>
+
