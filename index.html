@@ -438,13 +438,13 @@
     if(lang !== "ru" && lang !== "en") lang = "en";
     const L = ()=> I18N[lang];
 
-    const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
 
 // Mobile-only time nerf (PC unchanged)
 const mobileTimeMul = isCoarsePointer ? 0.85 : 1.0;
 
 const MODES = [
-      { key:"calm", label:{en:"Mode: Calm", ru:"Режим: Спокойный"}, nodesMin:6, nodesMax:10, timeBase:4.2, timePerNode:0.14, radius:18, magnet:18 },
+      { key:"calm", label:{en:"Mode: Calm", ru:"Режим: Спокойный"}, nodesMin:6, nodesMax:10, timeBase:3.2, timePerNode:0.09, radius:18, magnet:18 },
       { key:"rush", label:{en:"Mode: Rush", ru:"Режим: Рывок"}, nodesMin:8, nodesMax:13, timeBase:2.5, timePerNode:0.07, radius:16, magnet:14 }
     ];
     let modeIndex = 0;
