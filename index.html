@@ -798,6 +798,7 @@
       const w = state.vw, h = state.vh;
 
       const isMobilePortrait = window.matchMedia("(max-width: 520px) and (orientation: portrait)").matches;
+    const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
 
       /* ✅ ВАЖНО:
          - Раньше usableH был h*0.75 → точки скучивались вверх и лезли к таймеру
@@ -947,7 +948,7 @@
 
       const start = state.nodes[state.startIndex];
       const m = MODES[modeIndex];
-      const rr = (m.radius + 7);
+      const rr = (m.radius + (isCoarsePointer ? 22 : 10));
 
       if(dist2(x,y,start.x,start.y) <= rr*rr){
         state.holding = true;
