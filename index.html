@@ -440,7 +440,7 @@
 
     const MODES = [
       { key:"calm", label:{en:"Mode: Calm", ru:"Режим: Спокойный"}, nodesMin:6, nodesMax:10, timeBase:5.2, timePerNode:0.22, radius:18, magnet:18 },
-      { key:"rush", label:{en:"Mode: Rush", ru:"Режим: Рывок"}, nodesMin:8, nodesMax:13, timeBase:4.6, timePerNode:0.18, radius:16, magnet:14 }
+      { key:"rush", label:{en:"Mode: Rush", ru:"Режим: Рывок"}, nodesMin:8, nodesMax:13, timeBase:3.8, timePerNode:0.14, radius:16, magnet:14 }
     ];
     let modeIndex = 0;
 
@@ -948,7 +948,7 @@
       const start = state.nodes[state.startIndex];
       const m = MODES[modeIndex];
       const isCoarsePointerNow = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
-      const rr = (m.radius + (isCoarsePointerNow ? 22 : 10));
+      const rr = (m.radius + (isCoarsePointerNow ? 28 : 12));
 
       if(dist2(x,y,start.x,start.y) <= rr*rr){
         state.holding = true;
